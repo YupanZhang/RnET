@@ -1,5 +1,8 @@
 # RnET
 Extremely randomized trees model for Ra prediction 
+<img width="940" height="579" alt="image" src="https://github.com/user-attachments/assets/714654fc-237d-4cf1-b632-1fc553482677" />
+<img width="940" height="739" alt="image" src="https://github.com/user-attachments/assets/b139e370-2c8e-48d7-b93f-be3880277cd6" />
+
 
 # Ra Prediction Model
 The RaET Model is a Python-based machine learning tool designed specifically for predicting Ra values in China. By processing various environmental feature data (such as CEC, Clay, DTB, etc.), the model achieves accurate prediction of Ra values using the ExtraTreesRegressor algorithm and includes complete functional modules such as data preprocessing, model optimization, and result visualization.
