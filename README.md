@@ -8,7 +8,7 @@ Extremely randomized trees model for Ra prediction
 # Ra Prediction Model
 The RaET Model is a Python-based machine learning tool designed specifically for predicting Ra values in China. By processing various environmental feature data (such as CEC, Clay, DTB, etc.), the model achieves accurate prediction of Ra values using the ExtraTreesRegressor algorithm and includes complete functional modules such as data preprocessing, model optimization, and result visualization.
 
-# Compatibility Notes​
+**Compatibility Notes​**
 It is recommended to use Python versions 3.8 - 3.11 to ensure all functions work properly.
 
 # Algorithm Overview​
@@ -25,10 +25,10 @@ Based on the preprocessed data, uses data augmentation technology to expand samp
 Uses the trained model to predict Ra values for new data, saves the prediction results as raster files, and displays the prediction results through visualization.​
 The functions of each stage are implemented through modular code, allowing users to run specific steps individually or execute the complete process according to their needs. The code contains detailed comments to facilitate users' understanding of the implementation logic of each link.​
 
-# Environment Configuration
+**Environment Configuration**
 Before running this model, please ensure that the following necessary dependencies are installed.
 
-# Recommended Versions​
+**Recommended Versions​**
 The model has been tested in the following environment and library versions. If you encounter compatibility issues, it is recommended to use these versions:​
 Python Version: 3.8 - 3.11​
 Operating System: Windows 64-bit​
@@ -72,7 +72,7 @@ silt.tif: gravimetric percentage of silt in the soil, used as a feature variable
 
 sbd.tif: soil bulk density, used as a feature variable
 
-# Data Preprocessing Instructions​
+**Data Preprocessing Instructions​**
 The input data must be in raster image format (TIF). The model will automatically read and process the NoData values in it.​
 The model uses the IQR method to remove outliers to improve data quality. Users can adjust relevant parameters according to the actual characteristics of the data.​
 
@@ -87,7 +87,7 @@ The model uses the IQR method to remove outliers to improve data quality. Users 
 
 # Function Description​
 
-# Data Processing Module​
+**1.Data Processing Module​**
 **Reading Raster Data:** Reads TIF format raster data through the read_raster function and obtains NoData values.​
 
 **Processing NoData Values:** Uses the process_raster function to convert NoData values to NaN for subsequent data processing.​
@@ -96,7 +96,7 @@ The model uses the IQR method to remove outliers to improve data quality. Users 
 
 **Data Visualization:** Draws boxplots to show feature distributions, and analyzes relationships between features through kernel density estimation plots and correlation heatmaps.​
 
-# Model Construction Module​
+**2.Model Construction Module​**
 **Data Augmentation:** Performs data augmentation for sparse intervals of Ra values (by default, intervals below 25 and above 65) by adding Gaussian noise and slightly perturbing target values to expand the sample size.​
 
 **Adaptive Weights:** Dynamically adjusts weights according to the number of samples in different intervals, making the model pay more attention to sparse intervals with fewer samples.​
@@ -105,7 +105,8 @@ The model uses the IQR method to remove outliers to improve data quality. Users 
 
 **Prediction Correction:** Corrects the prediction results for specific intervals (low-value and high-value intervals) to reduce systematic errors.​
 
-# Prediction Module​
+
+**3.Prediction Module​**
 **Batch Prediction:** Supports batch prediction for large-scale data to avoid memory overflow issues.​
 
 **Result Saving:** Saves the prediction results in raster image format, retaining the coordinate reference system and transformation information of the original data for subsequent spatial analysis.​
