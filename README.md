@@ -1,7 +1,8 @@
 # RnET
 Extremely randomized trees model for Ra prediction 
-<img width="940" height="579" alt="image" src="https://github.com/user-attachments/assets/714654fc-237d-4cf1-b632-1fc553482677" />
-<img width="940" height="739" alt="image" src="https://github.com/user-attachments/assets/b139e370-2c8e-48d7-b93f-be3880277cd6" />
+<img width="866" height="670" alt="image" src="https://github.com/user-attachments/assets/87433f9c-c665-4261-a1bf-d786ffd7f92e" />
+<img width="1592" height="610" alt="image" src="https://github.com/user-attachments/assets/093b24e1-124b-440a-81fe-41b5165a5a96" />
+
 
 
 # Ra Prediction Model
