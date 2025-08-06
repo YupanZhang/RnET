@@ -13,6 +13,7 @@ It is recommended to use Python versions 3.8 - 3.11 to ensure all functions work
 # Algorithm Overview​
 
 The workflow of the model is mainly divided into three key stages:​
+
 **Data Processing and Visualization (Data Distribution, Percentiles, Outlier Removal):** 
 Reads raster image data, processes NoData values, performs data cleaning (removes outliers), and displays data distribution characteristics.
 
