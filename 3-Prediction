@@ -1,0 +1,90 @@
+from tqdm import tqdm  # Import progress bar library  
+import numpy as np
+import pandas as pd
+import os
+import rasterio
+import matplotlib.pyplot as plt
+
+# Prepare feature data  
+print("\nPreparing feature data...")  
+feature_data = np.stack((cec_processed, clay_processed, dtb_processed, oc_processed, ph_processed), axis=-1)  
+
+# Get feature names  
+feature_names = ['CEC', 'Clay', 'DTB', 'OC', 'PH', 'Litholohy', 'Sand', 'Silt']  
+
+# Flatten feature data  
+feature_data_flat = feature_data.reshape(-1, feature_data.shape[-1])  
+
+# Convert to DataFrame  
+feature_data_df = pd.DataFrame(feature_data_flat, columns=feature_names)  
+
+# Use tqdm to display prediction progress  
+print("\nStarting predictions...")  
+predictions_flat = []  
+batch_size = 1000000  # Can adjust batch size based on memory  
+n_cores = os.cpu_count()  
+print(f"Number of CPU cores: {n_cores}")  
+
+
+# Create ET model and set n_jobs parameter  
+enhanced_model.n_jobs = n_cores 
+
+with tqdm(total=len(feature_data_df), desc="Prediction progress") as pbar:  
+    for i in range(0, len(feature_data_df), batch_size):  
+        batch = feature_data_df[i:i+batch_size].values 
+        batch_predictions = enhanced_model.predict(batch) 
+        predictions_flat.extend(batch_predictions)  
+        pbar.update(len(batch))  
+
+
+# Convert prediction results to numpy array  
+predictions_flat = np.array(predictions_flat)  
+
+# Reshape prediction results to original layer shape  
+predictions = predictions_flat.reshape(cec.shape)  
+
+# Define save path  
+output_dir = r"C:\Users\Tako\Documents\DL\Out"
+
+# Save prediction results as new raster file  
+print("\nSaving prediction results...")  
+output_path = os.path.join(output_dir, 'predicted_ra_ET.tif')  
+
+
+# Get crs and transform from ra.tif  
+with rasterio.open(f'{data_path}\\ra.tif') as src:  
+    crs = src.crs  
+    transform = src.transform  
+
+with tqdm(total=1, desc="Saving file") as pbar:  
+    with rasterio.open(  
+        output_path,  
+        'w',  
+        driver='GTiff',  
+        height=predictions.shape[0],  
+        width=predictions.shape[1],  
+        count=1,  
+        dtype=predictions.dtype,  
+        crs=crs,  # Set appropriate coordinate reference system based on your data  
+        transform=transform, 
+    ) as dst:  
+        dst.write(predictions, 1)  
+    pbar.update(1)  
+
+print(f"\nPrediction results saved to: {output_path}")  
+
+# Plot prediction results  
+plt.figure(figsize=(12, 8))  
+im = plt.imshow(predictions, cmap='viridis', interpolation='nearest')  
+plt.colorbar(im, label='Ra Prediction')  
+plt.title('Ra Predict')  
+plt.xlabel('Columns')  
+plt.ylabel('Rows')  
+plt.axis('off')  # Turn off coordinate axes  
+plt.tight_layout()  
+
+# Modify image saving code to save to the same directory  
+png_output_path = os.path.join(output_dir, 'predicted_ra_ET.png')  
+plt.savefig(png_output_path) 
+
+plt.show()
