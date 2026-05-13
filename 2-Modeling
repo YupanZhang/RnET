@@ -1,1 +1,233 @@
+import numpy as np  
+import pandas as pd  
+import matplotlib.pyplot as plt  
+import seaborn as sns  
+from scipy import stats  
+from sklearn.ensemble import ExtraTreesRegressor  
+from sklearn.metrics import (  
+    mean_squared_error,   
+    mean_absolute_error,   
+    r2_score,   
+    mean_absolute_percentage_error  
+)  
+from sklearn.model_selection import GridSearchCV  
 
+# Plotting configuration
+plt.rcParams['font.family'] = 'Arial'  
+plt.rcParams['font.sans-serif'] = ['Arial']  # Specify default font
+plt.rcParams['axes.unicode_minus'] = False
+
+# Data Augmentation  
+X_aug_samples = []  
+y_aug_samples = []  
+
+for i in range(len(X_train)):  
+    # Original samples  
+    X_aug_samples.append(X_train.iloc[i])  
+    y_aug_samples.append(y_train.iloc[i])  
+    
+    # Add noisy samples (synthetic data generation)
+    for _ in range(5):  
+        noise = np.random.normal(0, 0.1, X_train.shape[1])  
+        augmented_sample = X_train.iloc[i] + noise  
+        X_aug_samples.append(augmented_sample)  
+        
+        # Slight perturbation of target values  
+        y_aug_samples.append(y_train.iloc[i] * (1 + np.random.uniform(-0.1, 0.1)))  
+
+X_augmented = pd.DataFrame(X_aug_samples, columns=X_train.columns)  
+y_augmented = pd.Series(y_aug_samples)  
+
+# Adaptive Sample Weighting Strategy  
+def adaptive_sample_weights(y):  
+    weights = np.ones(len(y))  
+    low_samples = np.sum(y < 25)  
+    mid_samples = np.sum((y >= 25) & (y <= 65))  
+    high_samples = np.sum(y > 65)  
+    
+    # Calculate weights to balance the influence of minority ranges (low and high values)
+    low_weight = max(2.0, 1 + (mid_samples / (low_samples + 1e-8)))  
+    high_weight = max(2.0, 1 + (mid_samples / (high_samples + 1e-8)))  
+    
+    weights[y < 25] = low_weight  
+    weights[(y >= 25) & (y <= 65)] = 1.0  
+    weights[y > 65] = high_weight  
+    
+    return weights  
+
+# Calculate sample weights  
+sample_weights = adaptive_sample_weights(y_augmented)  
+
+# Hyperparameter grid  
+et_param_grid = {  
+    'n_estimators': [200],  
+    'max_depth': [25],  
+    'min_samples_split': [2, 3],  
+    'min_samples_leaf': [2, 4],  
+    'bootstrap': [True, False],  
+    'max_features': ['sqrt', 'log2', None]  
+}  
+
+# Initialize model  
+et_model = ExtraTreesRegressor(random_state=42)  
+
+# Grid Search with Cross-Validation
+grid_search = GridSearchCV(  
+    estimator=et_model,  
+    param_grid=et_param_grid,  
+    scoring='neg_mean_squared_error',  
+    cv=5,  
+    n_jobs=-1,  
+    verbose=0  
+)  
+
+# Train the model  
+grid_search.fit(X_augmented, y_augmented, sample_weight=sample_weights)  
+
+# Retrieve the best model  
+best_model = grid_search.best_estimator_  
+
+# Prediction  
+y_pred = best_model.predict(X_test)  
+
+# Range-based Bias Correction  
+def region_correction(y_pred, y_true):  
+    y_pred_corrected = y_pred.copy()  
+    
+    low_mask = y_true < 25  
+    high_mask = y_true > 65  
+    
+    # Apply mean error correction for low-value range
+    if low_mask.sum() > 0:  
+        low_correction = np.mean(y_true[low_mask] - y_pred[low_mask])  
+        y_pred_corrected[low_mask] += low_correction  
+    
+    # Apply mean error correction for high-value range
+    if high_mask.sum() > 0:  
+        high_correction = np.mean(y_true[high_mask] - y_pred[high_mask])  
+        y_pred_corrected[high_mask] += high_correction  
+    
+    return y_pred_corrected  
+
+# Execute range-based correction  
+y_pred_corrected = region_correction(y_pred, y_test)  
+
+# Evaluation Metrics  
+mse_original = mean_squared_error(y_test, y_pred)  
+rmse_original = np.sqrt(mse_original)  
+mae_original = mean_absolute_error(y_test, y_pred)  
+r2_original = r2_score(y_test, y_pred)  
+mape_original = mean_absolute_percentage_error(y_test, y_pred)  
+
+mse_corrected = mean_squared_error(y_test, y_pred_corrected)  
+rmse_corrected = np.sqrt(mse_corrected)  
+mae_corrected = mean_absolute_error(y_test, y_pred_corrected)  
+r2_corrected = r2_score(y_test, y_pred_corrected)  
+mape_corrected = mean_absolute_percentage_error(y_test, y_pred_corrected)  
+
+# Print evaluation results  
+print("Original Prediction Model Performance:")  
+print(f"RMSE: {rmse_original}")  
+print(f"MAE: {mae_original}")  
+print(f"R²: {r2_original}")  
+print(f"MAPE: {mape_original}")  
+
+print("\nCorrected Prediction Model Performance:")  
+print(f"RMSE: {rmse_corrected}")  
+print(f"MAE: {mae_corrected}")  
+print(f"R²: {r2_corrected}")  
+print(f"MAPE: {mape_corrected}")  
+
+# Convert Pandas Series to NumPy arrays  
+y_test_np = np.array(y_test)  
+y_pred_np = np.array(y_pred)  
+y_pred_corrected_np = np.array(y_pred_corrected)  
+y_train_np = np.array(y_train)  
+
+# Visualization Section  
+def plot_density_scatter(y_test, y_pred, title, r2, y_train):  
+    # Calculate density  
+    xy = np.vstack([y_test, y_pred])  
+    z = stats.gaussian_kde(xy)(xy)  
+    
+    # Sort points by density for plotting  
+    idx = z.argsort()  
+    x_sorted = y_test[idx]  
+    y_sorted = y_pred[idx]  
+    z_sorted = z[idx]  
+
+    # Plot performance chart  
+    plt.figure(figsize=(10, 6))  
+    ax = plt.gca()
+    ax.spines[:].set_color('black')
+    
+    # Draw density scatter plot  
+    scatter = plt.scatter(y_test, y_pred, c=z, s=50, cmap='viridis', alpha=0.7, edgecolor='none', label='Predicted')  
+    plt.colorbar(scatter, shrink=1, orientation='vertical', extend='both', pad=0.015, aspect=30, label='Frequency')  
+    plt.plot([0, 100], [0, 100], 'k--', lw=2, label='1:1 Line')  
+    
+    # Add trendline  
+    z_fit = np.polyfit(y_test, y_pred, 1)  
+    p = np.poly1d(z_fit)  
+    plt.plot(y_test, p(y_test), 'r-', label='Trendline')  
+
+    # Set label and tick font sizes  
+    plt.title(title, fontsize=16)  
+    plt.xlabel('Observed Ra (Bq/kg)', fontsize=16)  
+    plt.ylabel('Predicted Ra (Bq/kg)', fontsize=16)  
+    plt.xticks(fontsize=16)  
+    plt.yticks(fontsize=16)  
+
+    # Display equation  
+    plt.text(0.05, 0.85, f'Equation: y = {z_fit[0]:.4f}x + {z_fit[1]:.4f}',   
+             transform=plt.gca().transAxes,   
+             verticalalignment='top')  
+
+    # Set 1:1 aspect ratio  
+    plt.xlim(0, 100)  
+    plt.ylim(0, 100)  
+    plt.gca().set_aspect('equal', adjustable='box')  
+    plt.text(5, 75, f'R²: {r2:.2f}', fontsize=12)  
+    plt.text(5, 70, f'Train: {len(y_train)}', fontsize=12)  
+    plt.text(5, 65, f'Test: {len(y_test)}', fontsize=12)  
+    plt.legend(loc='lower right')  
+    plt.grid(False)
+    plt.tight_layout()  
+    plt.show()  
+
+def plot_distribution(y_train, y_pred_original, y_pred_corrected, y_test):  
+    # Set plotting style  
+    sns.set(style="whitegrid")  
+
+    # Create Histograms  
+    plt.figure(figsize=(14, 6))  
+
+    plt.subplot(1, 2, 1)  
+    sns.histplot(y_train, bins=30, color='blue', kde=True, label='Train', stat='density')  
+    sns.histplot(y_pred_original, bins=30, color='orange', kde=True, label='Original Predict', stat='density')  
+    sns.histplot(y_pred_corrected, bins=30, color='green', kde=True, label='Modified Predict', stat='density')  
+    plt.title('Histogram Comparison')  
+    plt.xlabel('Ra')  
+    plt.ylabel('Density')  
+    plt.legend()  
+
+    # Create Boxplots  
+    plt.subplot(1, 2, 2)  
+    sns.boxplot(data=[y_train, y_pred_original, y_pred_corrected, y_test],   
+                palette=["blue", "orange", "green", "red"])  
+    plt.xticks([0, 1, 2, 3], ['Train', 'Original Predict', 'Modified Predict', 'Test'])  
+    plt.title('Boxplot Comparison')  
+    plt.ylabel('Ra')  
+    plt.grid(False)  
+    plt.tight_layout()  
+    plt.show()  
+
+# Call visualization functions  
+# Original prediction density scatter  
+plot_density_scatter(y_test_np, y_pred_np, 'Original ET Model (CNN Baseline)', r2_original, y_train_np)  
+
+# Corrected prediction density scatter  
+plot_density_scatter(y_test_np, y_pred_corrected_np, 'RF Ra Modified (Range Correction)', r2_corrected, y_train_np)  
+
+# Distribution comparison plots  
+plot_distribution(y_train_np, y_pred_np, y_pred_corrected_np, y_test_np)
