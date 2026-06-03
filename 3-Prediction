@@ -1,3 +1,41 @@
+##################################################
+# data preparation are needed#
+ra, ra_nodata = read_raster(os.path.join(data_path, 'ra.tif'))  
+cec, cec_nodata = read_raster(os.path.join(data_path, 'cec.tif'))  
+clay, clay_nodata = read_raster(os.path.join(data_path, 'clay.tif'))  
+dtb, dtb_nodata = read_raster(os.path.join(data_path, 'dtb.tif'))  
+#glim, glim_nodata = read_raster(os.path.join(data_path, 'glim.tif'))  
+oc, oc_nodata = read_raster(os.path.join(data_path, 'oc.tif'))  
+ph, ph_nodata = read_raster(os.path.join(data_path, 'ph.tif'))  
+
+#  
+ra_processed = process_raster(ra, ra_nodata)  
+cec_processed = process_raster(cec, cec_nodata)  
+clay_processed = process_raster(clay, clay_nodata)  
+dtb_processed = process_raster(dtb, dtb_nodata)  
+glim_processed = process_raster(glim, glim_nodata)  
+oc_processed = process_raster(oc, oc_nodata)  
+ph_processed = process_raster(ph, ph_nodata)  
+
+#  
+feature_data = {  
+    'CEC': cec_processed.flatten(),  
+    'Clay': clay_processed.flatten(),  
+    'DTB': dtb_processed.flatten(),  
+    'Glim': glim_processed.flatten(),  
+    'OC': oc_processed.flatten(),  
+    'PH': ph_processed.flatten(),  
+    'Ra': ra_processed.flatten()  
+}  
+##################################################
+
+
+
+
+
+
+
+
 from tqdm import tqdm  # Import progress bar library  
 import numpy as np
 import pandas as pd
@@ -7,7 +45,9 @@ import matplotlib.pyplot as plt
 
 # Prepare feature data  
 print("\nPreparing feature data...")  
-feature_data = np.stack((cec_processed, clay_processed, dtb_processed, oc_processed, ph_processed), axis=-1)  
+
+# design ur dataset
+feature_data = np.stack((cec_processed, clay_processed, dtb_processed, oc_processed, ph_processed, XXXXXXXXXXXXX), axis=-1)  
 
 # Get feature names  
 feature_names = ['CEC', 'Clay', 'DTB', 'OC', 'PH', 'Litholohy', 'Sand', 'Silt']  
